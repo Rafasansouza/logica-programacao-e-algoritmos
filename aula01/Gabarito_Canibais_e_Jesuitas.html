@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solução: Missionários e Canibais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1e293b;
+        }
+        .emoji-icon {
+            font-size: 2.5rem;
+            transition: all 0.5s ease-in-out;
+        }
+        .boat-icon {
+             font-size: 3rem;
+        }
+        .river {
+            background: linear-gradient(to bottom, #aaccff, #77aaff);
+            border-top: 2px dashed #6699ee;
+            border-bottom: 2px dashed #6699ee;
+        }
+        .step-item.active {
+            background-color: #e0e7ff;
+            border-left-color: #4f46e5;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Solução: Missionários e Canibais</h1>
+            <p class="text-slate-500 mt-2">Visualização passo a passo da travessia do rio.</p>
+        </header>
+        
+        <!-- Painel de Visualização Principal -->
+        <div id="game-board" class="flex items-center justify-between gap-2 md:gap-4 p-4 bg-slate-50 rounded-xl mb-6">
+            <!-- Margem Esquerda -->
+            <div id="left-bank" class="bank w-1/3 min-h-[150px] bg-green-200 p-3 rounded-lg flex flex-wrap gap-2 justify-center items-center content-start border-2 border-green-300">
+                <!-- Personagens aparecem aqui -->
+            </div>
+            
+            <!-- Rio e Barco -->
+            <div class="river flex-grow h-[150px] flex items-center justify-center text-3xl md:text-4xl text-blue-800 relative rounded-md">
+                <div id="boat" class="absolute transition-all duration-700 ease-in-out">
+                    <div class="flex items-center justify-center gap-1 bg-yellow-900/40 p-2 rounded-full shadow-md">
+                        <span class="boat-icon">🛶</span>
+                        <div id="boat-passengers" class="flex"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Margem Direita -->
+            <div id="right-bank" class="bank w-1/3 min-h-[150px] bg-green-200 p-3 rounded-lg flex flex-wrap gap-2 justify-center items-center content-start border-2 border-green-300">
+                <!-- Personagens aparecem aqui -->
+            </div>
+        </div>
+
+        <!-- Controles de Navegação -->
+        <div class="flex items-center justify-center gap-4 mb-8">
+            <button id="prev-btn" class="px-6 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+            <div id="step-info" class="font-semibold text-lg text-slate-600 w-28 text-center">Passo 0/11</div>
+            <button id="next-btn" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-sm hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Próximo</button>
+        </div>
+
+        <!-- Lista de Passos -->
+        <div>
+            <h2 class="text-xl font-bold text-center mb-4 text-slate-700">Detalhes dos Movimentos</h2>
+            <div id="steps-list" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                <!-- Descrições dos passos aparecem aqui -->
+            </div>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const missionaryChar = '🧑‍💼';
+        const cannibalChar = '👹';
+
+        // Solução encontrada pelo algoritmo, agora no formato para o JS
+        const solutionSteps = [
+            { ml: 3, cl: 3, b: 'left', move: 'Estado Inicial.' },
+            { ml: 3, cl: 1, b: 'right', move: '2 Canibais atravessam para a direita.' },
+            { ml: 3, cl: 2, b: 'left', move: '1 Canibal retorna para a esquerda.' },
+            { ml: 3, cl: 0, b: 'right', move: '2 Canibais atravessam para a direita.' },
+            { ml: 3, cl: 1, b: 'left', move: '1 Canibal retorna para a esquerda.' },
+            { ml: 1, cl: 1, b: 'right', move: '2 Missionários atravessam para a direita.' },
+            { ml: 2, cl: 2, b: 'left', move: '1 Missionário e 1 Canibal retornam.' },
+            { ml: 0, cl: 2, b: 'right', move: '2 Missionários atravessam para a direita.' },
+            { ml: 0, cl: 3, b: 'left', move: '1 Canibal retorna para a esquerda.' },
+            { ml: 0, cl: 1, b: 'right', move: '2 Canibais atravessam para a direita.' },
+            { ml: 0, cl: 2, b: 'left', move: '1 Canibal retorna para a esquerda.' },
+            { ml: 0, cl: 0, b: 'right', move: '2 Canibais atravessam e todos chegam! 🎉' }
+        ];
+
+        let currentStep = 0;
+        const totalSteps = solutionSteps.length - 1;
+
+        const leftBank = document.getElementById('left-bank');
+        const rightBank = document.getElementById('right-bank');
+        const boat = document.getElementById('boat');
+        const boatPassengers = document.getElementById('boat-passengers');
+        
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const stepInfo = document.getElementById('step-info');
+        const stepsListContainer = document.getElementById('steps-list');
+
+        function getPassengers(fromStep, toStep) {
+            let m_moved = Math.abs(toStep.ml - fromStep.ml);
+            let c_moved = Math.abs(toStep.cl - fromStep.cl);
+            return missionaryChar.repeat(m_moved) + cannibalChar.repeat(c_moved);
+        }
+
+        function renderStepsList() {
+            stepsListContainer.innerHTML = '';
+            solutionSteps.forEach((step, index) => {
+                const li = document.createElement('div');
+                li.className = 'step-item p-3 bg-slate-100 rounded-md cursor-pointer border-l-4 border-slate-200 hover:bg-slate-200 transition';
+                li.dataset.step = index;
+                li.innerHTML = `<span class="font-bold text-indigo-700">Passo ${index}:</span> ${step.move}`;
+                li.addEventListener('click', () => {
+                    currentStep = index;
+                    updateState();
+                });
+                stepsListContainer.appendChild(li);
+            });
+        }
+
+        function updateState() {
+            const state = solutionSteps[currentStep];
+            const prevState = currentStep > 0 ? solutionSteps[currentStep - 1] : state;
+            
+            // Limpa as margens e o barco
+            leftBank.innerHTML = '';
+            rightBank.innerHTML = '';
+            boatPassengers.innerHTML = '';
+
+            // Preenche as margens
+            for (let i = 0; i < state.ml; i++) leftBank.innerHTML += `<span class="emoji-icon">${missionaryChar}</span>`;
+            for (let i = 0; i < state.cl; i++) leftBank.innerHTML += `<span class="emoji-icon">${cannibalChar}</span>`;
+            
+            const mr = 3 - state.ml;
+            const cr = 3 - state.cl;
+            for (let i = 0; i < mr; i++) rightBank.innerHTML += `<span class="emoji-icon">${missionaryChar}</span>`;
+            for (let i = 0; i < cr; i++) rightBank.innerHTML += `<span class="emoji-icon">${cannibalChar}</span>`;
+            
+            // Posiciona o barco e define os passageiros
+            if (state.b === 'left') {
+                boat.style.left = '15%';
+                if (currentStep < totalSteps) {
+                   boatPassengers.innerHTML = getPassengers(state, solutionSteps[currentStep + 1]);
+                }
+            } else {
+                boat.style.left = '85%';
+                 if (currentStep < totalSteps) {
+                   boatPassengers.innerHTML = getPassengers(state, solutionSteps[currentStep + 1]);
+                } else { // No último passo, barco vazio
+                   boatPassengers.innerHTML = getPassengers(state, solutionSteps[currentStep]);
+                }
+            }
+            if (currentStep === 0) { // Passageiros para a primeira viagem
+                boatPassengers.innerHTML = getPassengers(state, solutionSteps[currentStep + 1]);
+            }
+            if (currentStep === totalSteps) { // Barco vazio no final
+                boatPassengers.innerHTML = '';
+            }
+
+            // Atualiza UI
+            stepInfo.textContent = `Passo ${currentStep}/${totalSteps}`;
+            prevBtn.disabled = currentStep === 0;
+            nextBtn.disabled = currentStep === totalSteps;
+
+            // Atualiza lista
+            document.querySelectorAll('.step-item').forEach((item, index) => {
+                item.classList.toggle('active', index === currentStep);
+                if (index === currentStep) {
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateState();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateState();
+            }
+        });
+
+        // Inicialização
+        renderStepsList();
+        updateState();
+    });
+</script>
+
+</body>
+</html>

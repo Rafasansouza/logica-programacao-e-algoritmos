@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Interativo: Missionários e Canibais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1e293b;
+        }
+        .emoji-icon {
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, opacity 0.3s;
+        }
+        .emoji-icon:hover {
+            transform: scale(1.15);
+        }
+        .boat-icon {
+             font-size: 3rem;
+        }
+        .river {
+            background: linear-gradient(to bottom, #aaccff, #77aaff);
+            border-top: 2px dashed #6699ee;
+            border-bottom: 2px dashed #6699ee;
+        }
+        #boat {
+            transition: left 0.8s ease-in-out;
+        }
+        .control-btn {
+            @apply px-3 py-1.5 bg-slate-200 text-slate-700 font-semibold rounded-md shadow-sm hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm;
+        }
+        .message-box {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Jogo: Missionários e Canibais</h1>
+            <p class="text-slate-500 mt-2">Sua vez de resolver o desafio! Leve todos para a margem direita.</p>
+        </header>
+
+        <!-- Mensagem de Status -->
+        <div id="message-box" class="message-box opacity-0 transform -translate-y-4 h-8 text-center mb-4">
+             <span id="message-text" class="px-4 py-2 rounded-md font-semibold"></span>
+        </div>
+        
+        <!-- Painel de Visualização Principal -->
+        <div id="game-board" class="flex items-center justify-between gap-2 md:gap-4 p-4 bg-slate-50 rounded-xl mb-6">
+            
+            <!-- Margem Esquerda com Controles -->
+            <div class="w-1/3 text-center">
+                <h3 class="font-bold text-lg mb-2">Margem Esquerda</h3>
+                <div id="left-bank" class="bank min-h-[150px] bg-green-200 p-3 rounded-lg flex flex-wrap gap-2 justify-center items-center content-start border-2 border-green-300"></div>
+                <div id="left-controls" class="mt-3 space-x-2">
+                    <button class="control-btn" onclick="movePerson('missionary', 'to_boat')">🧑‍💼 para Barco</button>
+                    <button class="control-btn" onclick="movePerson('cannibal', 'to_boat')">👹 para Barco</button>
+                </div>
+            </div>
+            
+            <!-- Rio e Barco -->
+            <div class="river flex-grow h-[150px] flex items-center justify-center text-3xl md:text-4xl text-blue-800 relative rounded-md">
+                <div id="boat" class="absolute" style="left: 15%;">
+                    <div class="flex flex-col items-center">
+                        <div id="boat-passengers" class="flex items-center justify-center gap-1 bg-yellow-900/40 p-2 rounded-t-full shadow-md min-h-[50px] min-w-[100px]">
+                            <!-- Passageiros aqui -->
+                        </div>
+                        <span class="boat-icon -mt-2">🛶</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Margem Direita com Controles -->
+            <div class="w-1/3 text-center">
+                <h3 class="font-bold text-lg mb-2">Margem Direita</h3>
+                <div id="right-bank" class="bank min-h-[150px] bg-green-200 p-3 rounded-lg flex flex-wrap gap-2 justify-center items-center content-start border-2 border-green-300"></div>
+                <div id="right-controls" class="mt-3 space-x-2">
+                    <button class="control-btn" onclick="movePerson('missionary', 'to_boat')">🧑‍💼 para Barco</button>
+                    <button class="control-btn" onclick="movePerson('cannibal', 'to_boat')">👹 para Barco</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles Principais -->
+        <div class="flex items-center justify-center gap-4">
+            <button id="reset-btn" class="px-8 py-3 bg-slate-500 text-white font-bold rounded-lg shadow-md hover:bg-slate-600 transition">Reiniciar</button>
+            <button id="cross-btn" class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition">Atravessar Rio</button>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const missionaryChar = '🧑‍💼';
+        const cannibalChar = '👹';
+
+        const leftBankEl = document.getElementById('left-bank');
+        const rightBankEl = document.getElementById('right-bank');
+        const boatEl = document.getElementById('boat');
+        const boatPassengersEl = document.getElementById('boat-passengers');
+        const leftControls = document.getElementById('left-controls');
+        const rightControls = document.getElementById('right-controls');
+        const crossBtn = document.getElementById('cross-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const messageTextEl = document.getElementById('message-text');
+        const messageBoxEl = document.getElementById('message-box');
+
+        let gameState = {};
+
+        function getInitialState() {
+            return {
+                left: { m: 3, c: 3 },
+                right: { m: 0, c: 0 },
+                boat: { m: 0, c: 0, isLeft: true }
+            };
+        }
+
+        function showMessage(text, type) {
+            messageTextEl.textContent = text;
+            messageBoxEl.style.opacity = '1';
+            messageBoxEl.style.transform = 'translateY(0)';
+            
+            if (type === 'error') {
+                messageTextEl.className = 'px-4 py-2 rounded-md font-semibold bg-red-100 text-red-700';
+            } else if (type === 'success') {
+                messageTextEl.className = 'px-4 py-2 rounded-md font-semibold bg-green-100 text-green-700';
+            } else {
+                 messageTextEl.className = 'px-4 py-2 rounded-md font-semibold bg-blue-100 text-blue-700';
+            }
+
+            if(type !== 'persistent') {
+                setTimeout(() => {
+                    messageBoxEl.style.opacity = '0';
+                    messageBoxEl.style.transform = 'translateY(-1rem)';
+                }, 2500);
+            }
+        }
+        
+        function render() {
+            // Limpar tudo
+            leftBankEl.innerHTML = '';
+            rightBankEl.innerHTML = '';
+            boatPassengersEl.innerHTML = '';
+
+            // Renderizar margens
+            for (let i = 0; i < gameState.left.m; i++) leftBankEl.innerHTML += `<span class="emoji-icon" onclick="movePerson('missionary', 'to_boat')">${missionaryChar}</span>`;
+            for (let i = 0; i < gameState.left.c; i++) leftBankEl.innerHTML += `<span class="emoji-icon" onclick="movePerson('cannibal', 'to_boat')">${cannibalChar}</span>`;
+            for (let i = 0; i < gameState.right.m; i++) rightBankEl.innerHTML += `<span class="emoji-icon" onclick="movePerson('missionary', 'to_boat')">${missionaryChar}</span>`;
+            for (let i = 0; i < gameState.right.c; i++) rightBankEl.innerHTML += `<span class="emoji-icon" onclick="movePerson('cannibal', 'to_boat')">${cannibalChar}</span>`;
+
+            // Renderizar passageiros do barco
+            for (let i = 0; i < gameState.boat.m; i++) boatPassengersEl.innerHTML += `<span class="emoji-icon !text-2xl" onclick="movePerson('missionary', 'from_boat')">${missionaryChar}</span>`;
+            for (let i = 0; i < gameState.boat.c; i++) boatPassengersEl.innerHTML += `<span class="emoji-icon !text-2xl" onclick="movePerson('cannibal', 'from_boat')">${cannibalChar}</span>`;
+
+            // Posição do barco e controles
+            if (gameState.boat.isLeft) {
+                boatEl.style.left = '15%';
+                leftControls.style.visibility = 'visible';
+                rightControls.style.visibility = 'hidden';
+            } else {
+                boatEl.style.left = 'calc(85% - 80px)'; // ajuste pela largura do barco
+                leftControls.style.visibility = 'hidden';
+                rightControls.style.visibility = 'visible';
+            }
+        }
+
+        window.movePerson = (type, direction) => {
+            const boatCapacity = gameState.boat.m + gameState.boat.c;
+            const currentBank = gameState.boat.isLeft ? 'left' : 'right';
+
+            if (direction === 'to_boat') {
+                if (boatCapacity >= 2) {
+                    showMessage('O barco está cheio!', 'error');
+                    return;
+                }
+                const personKey = type === 'missionary' ? 'm' : 'c';
+                if (gameState[currentBank][personKey] > 0) {
+                    gameState[currentBank][personKey]--;
+                    gameState.boat[personKey]++;
+                }
+            } else if (direction === 'from_boat') {
+                const personKey = type === 'missionary' ? 'm' : 'c';
+                if (gameState.boat[personKey] > 0) {
+                    gameState.boat[personKey]--;
+                    gameState[currentBank][personKey]++;
+                }
+            }
+            render();
+        }
+        
+        function checkRules() {
+            // Regra 1: Canibais não podem superar missionários em nenhuma margem
+            const leftBankInvalid = gameState.left.m > 0 && gameState.left.c > gameState.left.m;
+            const rightBankInvalid = gameState.right.m > 0 && gameState.right.c > gameState.right.m;
+
+            if (leftBankInvalid || rightBankInvalid) {
+                showMessage('Você perdeu! Os canibais atacaram.', 'error', 'persistent');
+                crossBtn.disabled = true;
+                return false;
+            }
+            
+            // Regra 2: Vitória
+            if (gameState.right.m === 3 && gameState.right.c === 3) {
+                showMessage('VITÓRIA! Você resolveu o desafio! 🎉', 'success', 'persistent');
+                crossBtn.disabled = true;
+                return false;
+            }
+            return true;
+        }
+
+        crossBtn.addEventListener('click', () => {
+            const boatCapacity = gameState.boat.m + gameState.boat.c;
+            if (boatCapacity === 0) {
+                showMessage('O barco não pode atravessar vazio!', 'error');
+                return;
+            }
+            
+            // Mover barco
+            gameState.boat.isLeft = !gameState.boat.isLeft;
+            
+            // Descarregar passageiros
+            const currentBank = gameState.boat.isLeft ? 'left' : 'right';
+            gameState[currentBank].m += gameState.boat.m;
+            gameState[currentBank].c += gameState.boat.c;
+            gameState.boat.m = 0;
+            gameState.boat.c = 0;
+
+            render();
+            setTimeout(checkRules, 400); // Dar tempo para a animação do barco
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            gameState = getInitialState();
+            crossBtn.disabled = false;
+            messageTextEl.textContent = '';
+            messageBoxEl.style.opacity = '0';
+            showMessage('Jogo reiniciado!', 'info');
+            render();
+        });
+
+        // Inicialização
+        gameState = getInitialState();
+        render();
+    });
+</script>
+
+</body>
+</html>
