@@ -1,0 +1,42 @@
+- Descreva o passo a passo para fazer uma compra no mercado, desde chegar até pagar.
+
+1 - pegar um carrinho/cesta
+2 - pegar os itens conforme a lista de compras
+3 - checkar na lista de compras
+4 - ir ao caixa
+5 - passar os itens no caixa
+6 - pagar
+7 - ficar puto pq não colocou algo na lista
+
+- Descreva como saber se um número é par ou ímpar
+
+1 - receber um numero 
+2 - dividir ele por 2 
+3 - verificar se há resto na divisão
+4 - se tiver tiver resto classificar como impar
+5 - se não tiver resto classificar como par
+
+- Descreva como é feito a soma de 2 números
+
+1 - receber o primeiro numero
+2 - receber o segundo numero
+3 - somar os numeros
+
+Descreva como descobrir qual é o maior número entre dois valores.
+
+1 - receber numero_1
+2 - receber  numero_2
+3 - se numero_1 > numero_2
+4 - apresentar numero_1
+5 - se não, se numero_2 > numero_1
+6 - apresentar numero_2
+7 - se não apresentar numeros iguais
+
+Descreva como calcular a média de três notas escolares
+
+1 - receber numero_1
+2 - receber  numero_2
+3 - receber  numero_3
+4 - somar numeros 
+5 - dividir por 3
+6 - apresentar resultado
